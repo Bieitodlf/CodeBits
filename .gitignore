@@ -112,3 +112,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#macos stuff
+.DS_Store
+
+#generated images
+*.png
+*.raw
+*.svg
