@@ -2,9 +2,11 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib import interactive
 import matplotlib
-matplotlib.use('Qt5Agg')
+#matplotlib.use('Qt5Agg')
 from mpl_toolkits import mplot3d
 import numpy as np
+from PIL import Image
+
 
 class terrain:
     def __init__(self):
@@ -45,7 +47,7 @@ class terrain:
             for corner in corners:
                 average += self.hMap[corner[0]][corner[1]]
             average /= 4
-            randomNumber = np.random.normal(0, self.variation * depth, size=1)
+            randomNumber = np.random.normal(0, self.variation * (depth ** 2), size=1)
             self.hMap[centerX][centerY] = average + randomNumber
             print("diamond value was assigned")
 
@@ -86,7 +88,7 @@ class terrain:
                 print("offending edge: (", edge[0], edge[1], ") at coords: (", centerX, centerY, ")")
                 raise
             average /= 4
-            randomNumber = np.random.normal(0, self.variation * depth, size=1)
+            randomNumber = np.random.normal(0, self.variation * (depth ** 2), size=1)
             
             self.hMap[edge[0]][edge[1]] = average + randomNumber
 
@@ -156,7 +158,11 @@ if __name__ == "__main__":
     parser.add_argument('--nsize', action='store', type=int, help='value to generate map size')
     parser.add_argument('--depth', action='store', type=int, help='depth of recursion')
     parser.add_argument('--variation', action='store', type=float, help='defines size of variation in each step')
-    parser.add_argument('--interpolate', action='store', type=bool, help='use interpolation')
+    parser.add_argument('--interpolate', action='store_true', help='use interpolation')
+    parser.add_argument('--interactive', action='store_true', help='output to window or to file')
+    parser.add_argument('--plot', action='store_true', help='create plot for output')
+    parser.add_argument('--svg', action='store_true', help='save output as an svg 3D plot')
+    parser.add_argument('--saveImage', action='store_true', help='save output as a 2d grayscale png')
 
     args = parser.parse_args()
     nsize = args.nsize
@@ -168,17 +174,31 @@ if __name__ == "__main__":
     width = landscape.width
     height = width
 
-    if depth != nsize and args.interpolate == True:
+    if depth != nsize and args.interpolate:
         print("interpolation step")
         linearInterpolation(landscape.hMap)
    
-    fig = plt.figure()
+    
+    if args.plot:
+    
+        fig = plt.figure()
 
-    axes = fig.add_subplot(111, projection='3d')
-    X, Y = np.meshgrid(range(width), range(height))
-    axes.plot_surface(X, Y, landscape.hMap)
-#    fig.savefig('./test.svg', format='svg')
-    interactive(True)
-    fig.show()
-    time.sleep(5)
+        axes = fig.add_subplot(111, projection='3d')
+        X, Y = np.meshgrid(range(width), range(height))
+        axes.plot_surface(X, Y, landscape.hMap)
+        if args.svg:
+            fig.savefig('./test.svg', format='svg')
+        if args.interactive:
+            interactive(True)
+            fig.show()
+
+    imageArray = np.zeros((width, width), dtype=np.uint8)
+    for x in range(width):
+        for y in range(width):
+            imageArray[x][y] = np.uint8(landscape.hMap[x][y])
+    if args.saveImage:
+        image = Image.fromarray(imageArray)
+        image.convert('L')
+        image.save('terrain.png')
+    imageArray.tofile('heightmapRaw.raw')
 
